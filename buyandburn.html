@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseX BuyAndBurn</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
+    <style>
+        .fab {
+        margin-right: 4px;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+        }
+    
+        h1 {
+          font-size: 28px;
+          margin-bottom: 20px;
+        }
+    
+        label {
+          display: block;
+          font-size: 16px;
+          margin-bottom: 10px;
+        }
+    
+        input[type="text"] {
+          width: 95%;
+          padding: 10px;
+          font-size: 16px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          margin-bottom: 20px;
+        }
+    
+        button {
+          background-color: #4CAF50;
+          color: white;
+          padding: 10px 20px;
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          cursor: pointer;
+          margin-right: 10px;
+        }
+    
+        button:hover {
+          background-color: #3e8e41;
+        }
+    
+        #status {
+          margin-top: 20px;
+          font-size: 16px;
+          font-weight: bold;
+        }
+      </style>
+
+</head>
+<body>
+    <div class="container">
+      <h1>Interact with PulseXBuyAndBurn on TestnetV3</h1>
+      <button id="connectWallet">Connect Wallet</button>
+      <br><br>
+      <label for="lpAddresses">LP Addresses (comma-separated):</label>
+      <input type="text" id="lpAddresses" placeholder="Enter LP addresses separated by commas">
+      <br><br>
+      <button id="convertLps">Convert LPs</button>
+  
+      <div id="status"></div>
+      <p>Created by
+        <a href="https://twitter.com/thangstad" target="_blank">
+            <i class="fab fa-twitter"></i> Hans P
+        </a>
+        - source code available on
+        <a href="https://github.com/thangstad/pulsechain-tools" target="_blank">
+            <i class="fab fa-github"></i> GitHub
+        </a>
+    </p>
+    
+    </div>
+
+
+    <script>
+        let web3;
+        let contractAddress = "0x5cd3941cdcCb0B2936d51746f894567775096e5e";
+        let abi = [{"type":"constructor","stateMutability":"nonpayable","inputs":[{"type":"address","name":"_factory","internalType":"address"},{"type":"address","name":"_PLSX","internalType":"contract ERC20Burnable"},{"type":"address","name":"_WPLS","internalType":"address"}]},{"type":"event","name":"LogBridgeSet","inputs":[{"type":"address","name":"token","internalType":"address","indexed":true},{"type":"address","name":"bridge","internalType":"address","indexed":true}],"anonymous":false},{"type":"event","name":"LogBurn","inputs":[{"type":"address","name":"server","internalType":"address","indexed":true},{"type":"address","name":"token","internalType":"address","indexed":true},{"type":"uint256","name":"paidBounty","internalType":"uint256","indexed":false},{"type":"uint256","name":"amountBurned","internalType":"uint256","indexed":false}],"anonymous":false},{"type":"event","name":"LogSetAnyAuth","inputs":[],"anonymous":false},{"type":"event","name":"LogSlippageOverrode","inputs":[{"type":"address","name":"_adr","internalType":"address","indexed":false}],"anonymous":false},{"type":"event","name":"LogToggleOverrode","inputs":[{"type":"address","name":"_adr","internalType":"address","indexed":false}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"type":"address","name":"previousOwner","internalType":"address","indexed":true},{"type":"address","name":"newOwner","internalType":"address","indexed":true}],"anonymous":false},{"type":"event","name":"SetDevAddr","inputs":[{"type":"address","name":"_addr","internalType":"address","indexed":false}],"anonymous":false},{"type":"event","name":"SetDevCut","inputs":[{"type":"uint256","name":"_amount","internalType":"uint256","indexed":false}],"anonymous":false},{"type":"function","stateMutability":"view","outputs":[{"type":"uint256","name":"","internalType":"uint256"}],"name":"BOUNTY_FEE","inputs":[]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"contract ERC20Burnable"}],"name":"PLSX","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"addAuth","inputs":[{"type":"address","name":"_auth","internalType":"address"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"anyAuth","inputs":[]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"address"}],"name":"authorized","inputs":[{"type":"uint256","name":"","internalType":"uint256"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"bridge","internalType":"address"}],"name":"bridgeFor","inputs":[{"type":"address","name":"token","internalType":"address"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"uint256","name":"","internalType":"uint256"}],"name":"burnedPLSX","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"convertLps","inputs":[{"type":"address[]","name":"lp","internalType":"address[]"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"convertMultiple","inputs":[{"type":"address[]","name":"token0","internalType":"address[]"},{"type":"address[]","name":"token1","internalType":"address[]"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"address"}],"name":"devAddr","inputs":[]},{"type":"function","stateMutability":"view","outputs":[{"type":"uint256","name":"","internalType":"uint256"}],"name":"devCut","inputs":[]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"contract IUniswapV2Factory"}],"name":"factory","inputs":[]},{"type":"function","stateMutability":"view","outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"isAuth","inputs":[{"type":"address","name":"","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"overrideSlippage","inputs":[{"type":"address","name":"_token","internalType":"address"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"overrode","inputs":[{"type":"address","name":"","internalType":"address"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"address"}],"name":"owner","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"renounceOwnership","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"revokeAuth","inputs":[{"type":"address","name":"_auth","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"setAnyAuth","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"setBridge","inputs":[{"type":"address","name":"token","internalType":"address"},{"type":"address","name":"bridge","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"setDevAddr","inputs":[{"type":"address","name":"_addr","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"setDevCut","inputs":[{"type":"uint256","name":"_amount","internalType":"uint256"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"setSlippage","inputs":[{"type":"uint256","name":"_amt","internalType":"uint256"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"uint256","name":"","internalType":"uint256"}],"name":"slippage","inputs":[]},{"type":"function","stateMutability":"view","outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"slippageOverrode","inputs":[{"type":"address","name":"","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"transferOwnership","inputs":[{"type":"address","name":"newOwner","internalType":"address"}]}];
+        
+        window.addEventListener('load', async () => {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    // Don't attempt to enable the provider here
+                    // await window.ethereum.enable();
+                } catch (error) {
+                    console.error("User denied account access");
+                }
+
+                // Listen for disconnection event
+                window.ethereum.on('disconnect', disconnectHandler);
+
+                // Listen for chain change event
+                window.ethereum.on('chainChanged', chainChangedHandler);
+
+                // Listen for account change event
+                window.ethereum.on('accountsChanged', accountsChangedHandler);
+            } else if (window.web3) {
+                web3 = new Web3(web3.currentProvider);
+            } else {
+                console.log('No web3? You should consider trying MetaMask!');
+            }
+        });
+
+        let isConnected = false;
+        let account = null;
+
+        function disconnectHandler(error) {
+            isConnected = false;
+            account = null;
+            document.getElementById('status').innerText = "Disconnected";
+            document.getElementById('connectWallet').innerText = "Connect Wallet";
+        }
+
+        function chainChangedHandler(_chainId) {
+            window.location.reload();
+        }
+
+        function accountsChangedHandler(accounts) {
+            account = accounts[0];
+            document.getElementById('status').innerText = `Connected: ${account}`;
+        }
+
+        document.getElementById('connectWallet').addEventListener('click', async () => {
+            if (!isConnected) {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                account = accounts[0];
+                document.getElementById('status').innerText = `Connected: ${account}`;
+                document.getElementById('connectWallet').innerText = "Disconnect Wallet";
+                isConnected = true;
+            } else {
+                window.ethereum.removeListener('disconnect', disconnectHandler);
+                window.ethereum.removeListener('chainChanged', chainChangedHandler);
+                window.ethereum.removeListener('accountsChanged', accountsChangedHandler);
+                account = null;
+                document.getElementById('status').innerText = "Disconnected";
+                document.getElementById('connectWallet').innerText = "Connect Wallet";
+                isConnected = false;
+            }
+        });
+
+        document.getElementById('convertLps').addEventListener('click', async () => {
+            // Make sure the wallet is connected before proceeding
+            if (!isConnected) {
+                alert('Please connect your wallet first.');
+                return;
+            }
+
+            let lpInput = document.getElementById('lpAddresses').value;
+            let lpAddresses = lpInput.split(',').map(address => address.trim());
+
+            if (!lpAddresses.every(web3.utils.isAddress)) {
+                alert('Invalid LP address');
+                return;
+            }
+
+            const contract = new web3.eth.Contract(abi, contractAddress);
+            contract.methods.convertLps(lpAddresses).send({ from: account }, (error, transactionHash) => {
+                if (error) {
+                    document.getElementById('status').innerText = `Error: ${error.message}`;
+                } else {
+                    document.getElementById('status').innerText = `Transaction Hash: ${transactionHash}`;
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
